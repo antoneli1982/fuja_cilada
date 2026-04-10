@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANDRÉMICON - André o Vendedor Implacável</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bangers&family=Fredoka:wght@400;600;700&display=swap');
+* { margin:0; padding:0; box-sizing:border-box; }
+body { background:#1a0a0a; overflow:hidden; font-family:'Fredoka',sans-serif; user-select:none; }
+canvas { display:block; }
+#ui {
+  position:absolute; top:0; left:0; width:100%; pointer-events:none;
+  display:flex; justify-content:space-between; padding:12px 20px; z-index:10;
+}
+#score, #timer {
+  font-family:'Bangers',cursive; font-size:28px; color:#fff;
+  text-shadow: 2px 2px 0 #8b0000, 0 0 10px rgba(255,0,0,.5);
+  letter-spacing:2px;
+}
+#startScreen, #gameOver {
+  position:absolute; top:0; left:0; width:100%; height:100%;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background: radial-gradient(ellipse at center, #cc0000 0%, #880000 60%, #440000 100%);
+  z-index:100; gap:14px;
+}
+#gameOver { display:none; }
+.title {
+  font-family:'Bangers',cursive; font-size:72px; color:#fff;
+  text-shadow: 3px 3px 0 #000, 0 0 30px rgba(255,200,0,.4);
+  letter-spacing:6px; animation: pulse 1.5s ease-in-out infinite;
+}
+.slogan {
+  font-family:'Bangers',cursive; font-size:32px; color:#ffd700;
+  text-shadow: 2px 2px 0 #000;
+}
+@keyframes pulse { 0%,100%{transform:scale(1)} 50%{transform:scale(1.05)} }
+.subtitle { font-size:20px; color:#ffcccc; max-width:520px; text-align:center; line-height:1.4; }
+.btn {
+  pointer-events:all; cursor:pointer; margin-top:20px;
+  font-family:'Bangers',cursive; font-size:36px; color:#fff;
+  background: linear-gradient(180deg, #cc0000, #880000);
+  border:3px solid #ff4444; border-radius:12px;
+  padding:12px 48px; letter-spacing:3px;
+  text-shadow:2px 2px 0 #000;
+  box-shadow: 0 6px 20px rgba(255,0,0,.4);
+  transition: transform .1s, box-shadow .1s;
+}
+.btn:hover { transform:translateY(-2px); box-shadow: 0 8px 25px rgba(255,0,0,.6); }
+.btn:active { transform:translateY(1px); }
+#finalScore { font-family:'Bangers',cursive; font-size:48px; color:#ffd700; }
+.instructions { font-size:15px; color:#ffaaaa; margin-top:4px; }
+.runner {
+  position:absolute; font-size:36px; animation: runAcross linear infinite;
+  pointer-events:none; z-index:0; filter:drop-shadow(2px 2px 2px rgba(0,0,0,.5));
+}
+@keyframes runAcross { 0%{transform:translateX(100vw) scaleX(-1)} 100%{transform:translateX(-120vw) scaleX(-1)} }
+.runner:nth-child(1){top:8%;animation-duration:4s;font-size:32px;}
+.runner:nth-child(2){top:18%;animation-duration:5.5s;animation-delay:1s;font-size:28px;}
+.runner:nth-child(3){top:30%;animation-duration:3.8s;animation-delay:0.3s;}
+.runner:nth-child(4){top:55%;animation-duration:6s;animation-delay:2s;font-size:30px;}
+.runner:nth-child(5){top:70%;animation-duration:4.5s;animation-delay:0.8s;font-size:26px;}
+.runner:nth-child(6){top:82%;animation-duration:3.5s;animation-delay:1.5s;font-size:34px;}
+.runner:nth-child(7){top:42%;animation-duration:5s;animation-delay:2.5s;font-size:24px;}
+.runner:nth-child(8){top:92%;animation-duration:4.2s;animation-delay:0.5s;font-size:28px;}
+.speech-bubble {
+  position:absolute; font-size:13px; color:#fff; font-family:'Fredoka',sans-serif;
+  background:rgba(0,0,0,.5); padding:3px 8px; border-radius:8px; white-space:nowrap;
+  top:-22px; left:50%; transform:translateX(-50%) scaleX(-1);
+}
+.start-content { position:relative; z-index:2; display:flex; flex-direction:column; align-items:center; gap:14px; }
+</style>
+</head>
+<body>
+
+<div id="ui">
+  <div id="score">VENDAS: 0</div>
+  <div id="timer">⏱ 60s</div>
+</div>
+
+<div id="startScreen">
+  <div class="runner"><span class="speech-bubble">SOCORRO!</span>🏃‍♀️</div>
+  <div class="runner"><span class="speech-bubble">CONSÓRCIO NÃO!</span>👵🏃</div>
+  <div class="runner"><span class="speech-bubble">FOGE!</span>🧒💨</div>
+  <div class="runner"><span class="speech-bubble">ELE VEM!</span>👩🏃‍♀️</div>
+  <div class="runner"><span class="speech-bubble">ME DEIXA!</span>🧓💨</div>
+  <div class="runner"><span class="speech-bubble">NÃAAO!</span>🏃‍♂️💨</div>
+  <div class="runner"><span class="speech-bubble">JÁ TENHO!</span>👦🏃</div>
+  <div class="runner"><span class="speech-bubble">CORRE!</span>👩‍🦳💨</div>
+  <div class="start-content">
+    <div class="title">ANDRÉMICON</div>
+    <div class="slogan">É LÓGICO QUE DÁ!</div>
+    <div class="subtitle">André de Thomaz saiu da loja e não vai parar até vender consórcio pra TODO MUNDO! As pessoas fogem desesperadas... mas André não desiste!</div>
+    <div class="instructions">🎮 WASD ou SETAS = mover &nbsp;|&nbsp; ESPAÇO = vender!</div>
+    <div class="instructions">📱 Toque = mover &nbsp;|&nbsp; Toque duplo = vender!</div>
+    <button class="btn" onclick="startGame()">COMEÇAR A VENDER!</button>
+  </div>
+</div>
+
+<div id="gameOver">
+  <div class="title">FIM DE EXPEDIENTE!</div>
+  <div id="finalScore">0 VENDAS</div>
+  <div id="finalMsg" class="subtitle"></div>
+  <button class="btn" onclick="startGame()">TENTAR DE NOVO</button>
+</div>
+
+<canvas id="c"></canvas>
+
+<script>
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+let W, H;
+function resize() { W = canvas.width = innerWidth; H = canvas.height = innerHeight; }
+resize(); addEventListener('resize', resize);
+
+let player, people, particles, score, timer, gameRunning, lastTime, spawnTimer;
+const keys = {};
+addEventListener('keydown', e => { keys[e.code]=true; if(e.code==='Space') e.preventDefault(); });
+addEventListener('keyup', e => keys[e.code]=false);
+
+let touchX=null, touchY=null, touchAttack=false;
+canvas.addEventListener('touchstart', e => { e.preventDefault(); touchX=e.touches[0].clientX; touchY=e.touches[0].clientY; }, {passive:false});
+canvas.addEventListener('touchmove', e => { e.preventDefault(); touchX=e.touches[0].clientX; touchY=e.touches[0].clientY; }, {passive:false});
+canvas.addEventListener('touchend', e => { e.preventDefault(); if(!e.touches.length){touchX=null;touchY=null;} }, {passive:false});
+let lastTap=0;
+canvas.addEventListener('touchstart', e => { const n=Date.now(); if(n-lastTap<300)touchAttack=true; lastTap=n; });
+
+const PEOPLE_TYPES = [
+  { name:'velhinha', w:28, h:44, speed:70, color:'#dda0dd', points:30, hair:'#ccc', hairStyle:'bun' },
+  { name:'criança', w:22, h:32, speed:160, color:'#87ceeb', points:20, hair:'#8B4513', hairStyle:'short' },
+  { name:'homem', w:30, h:48, speed:100, color:'#4682b4', points:10, hair:'#333', hairStyle:'short' },
+  { name:'mulher', w:28, h:46, speed:120, color:'#e88bc4', points:15, hair:'#8B4513', hairStyle:'long' },
+  { name:'empresário', w:32, h:50, speed:85, color:'#2f4f4f', points:40, hair:'#222', hairStyle:'short' },
+  { name:'atleta', w:30, h:48, speed:210, color:'#ff6347', points:50, hair:'#333', hairStyle:'band' },
+  { name:'velhinho', w:30, h:44, speed:60, color:'#8fbc8f', points:35, hair:'#ddd', hairStyle:'bald' },
+];
+
+const MSGS_CATCH = ['VENDIDO!','ASSINA AQUI!','CONSÓRCIO FECHADO!','PARCELA SUAVE!','NEGÓCIO FEITO!','É LÓGICO QUE DÁ!','SEM JUROS!','CARTA DE CRÉDITO!'];
+const MSGS_FLEE = ['FUGIU!','ESCAPOU!','NÃOOO!','VOLTAAAA!','ERA CLIENTE BOM!'];
+
+function createPlayer() {
+  return { x:W/2, y:H-100, w:48, h:60, speed:175, vx:0, vy:0, dir:1, attacking:false, attackTimer:0, walkFrame:0 };
+}
+
+function spawnPerson() {
+  const type = PEOPLE_TYPES[Math.random()*PEOPLE_TYPES.length|0];
+  let x,y;
+  const side = Math.random()*4|0;
+  if(side===0){x=-30;y=Math.random()*H*.7+50;}
+  else if(side===1){x=W+30;y=Math.random()*H*.7+50;}
+  else if(side===2){x=Math.random()*W;y=-30;}
+  else{x=Math.random()*W;y=H+30;}
+  return {
+    ...type, x, y,
+    targetX:80+Math.random()*(W-160), targetY:80+Math.random()*(H-250),
+    fleeing:false, fleeX:0, fleeY:0, caught:false,
+    walkFrame:0, arrived:false, dir:Math.random()>.5?1:-1,
+    speechTimer:0, speech:''
+  };
+}
+
+function addParticles(x,y,color,text) {
+  for(let i=0;i<6;i++) particles.push({x,y,vx:(Math.random()-.5)*180,vy:-Math.random()*120-40,life:1,color,size:3+Math.random()*3});
+  if(text) particles.push({x,y:y-20,vx:0,vy:-50,life:2,text,size:22,color:'#fff'});
+}
+
+// Draw the ANDRÉMICON store
+function drawStore() {
+  const cx=W/2, sy=H-85;
+  // Building
+  ctx.fillStyle='#b20000';
+  ctx.fillRect(cx-90, sy, 180, 85);
+  ctx.fillStyle='#cc0000';
+  ctx.fillRect(cx-85, sy+5, 170, 75);
+  // Sign board
+  ctx.fillStyle='#990000';
+  ctx.fillRect(cx-100, sy-35, 200, 35);
+  ctx.fillStyle='#cc0000';
+  ctx.fillRect(cx-96, sy-32, 192, 29);
+  // ANDRÉMICON text
+  ctx.fillStyle='#fff';
+  ctx.font='bold 20px Bangers, cursive';
+  ctx.textAlign='center';
+  ctx.fillText('ANDRÉMICON', cx, sy-10);
+  // Slogan
+  ctx.font='9px Fredoka, sans-serif';
+  ctx.fillStyle='#ffd700';
+  ctx.fillText('É LÓGICO QUE DÁ!', cx, sy+18);
+  // Door
+  ctx.fillStyle='#700000';
+  ctx.fillRect(cx-18, sy+30, 36, 50);
+  ctx.fillStyle='#ffd700';
+  ctx.beginPath(); ctx.arc(cx+12,sy+55,3,0,Math.PI*2); ctx.fill();
+  // Logo hint (simple house shape)
+  ctx.strokeStyle='#fff';
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(cx-12,sy+28); ctx.lineTo(cx,sy+18); ctx.lineTo(cx+12,sy+28);
+  ctx.stroke();
+}
+
+// Draw André based on the photo
+function drawAndre(p) {
+  const bounce = Math.sin(p.walkFrame*8)*3;
+  const x=p.x, y=p.y+bounce;
+  ctx.save();
+  ctx.translate(x,y);
+  if(p.dir<0) ctx.scale(-1,1);
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,.3)';
+  ctx.beginPath(); ctx.ellipse(0,30,22,7,0,0,Math.PI*2); ctx.fill();
+
+  // Legs (dark pants)
+  const ls=Math.sin(p.walkFrame*8)*7;
+  ctx.fillStyle='#2a2a2a';
+  ctx.fillRect(-10,12,9,18+ls*.4);
+  ctx.fillRect(2,12,9,18-ls*.4);
+  // Shoes
+  ctx.fillStyle='#1a1a1a';
+  ctx.beginPath();
+  ctx.roundRect(-12,28+ls*.3,12,6,2); ctx.fill();
+  ctx.beginPath();
+  ctx.roundRect(1,28-ls*.3,12,6,2); ctx.fill();
+
+  // BODY - stocky/husky build
+  // Dark teal/navy undershirt
+  ctx.fillStyle='#1a3a3a';
+  ctx.beginPath();
+  ctx.roundRect(-18,-14,36,30,4); ctx.fill();
+
+  // Beige/khaki blazer - OPEN, oversized
+  ctx.fillStyle='#c4b396';
+  // Left lapel
+  ctx.beginPath();
+  ctx.moveTo(-20,-18); ctx.lineTo(-8,-14); ctx.lineTo(-10,16); ctx.lineTo(-22,14);
+  ctx.closePath(); ctx.fill();
+  // Right lapel
+  ctx.beginPath();
+  ctx.moveTo(20,-18); ctx.lineTo(8,-14); ctx.lineTo(10,16); ctx.lineTo(22,14);
+  ctx.closePath(); ctx.fill();
+  // Blazer shoulders + sleeves
+  ctx.fillStyle='#c4b396';
+  ctx.fillRect(-28,-16,12,28); // left sleeve
+  ctx.fillRect(16,-16,12,28); // right sleeve
+  // Shoulder pads
+  ctx.fillRect(-30,-18,60,6);
+  // Blazer collar
+  ctx.fillStyle='#b8a888';
+  ctx.beginPath();
+  ctx.moveTo(-14,-18); ctx.lineTo(-6,-10); ctx.lineTo(6,-10); ctx.lineTo(14,-18);
+  ctx.lineTo(10,-20); ctx.lineTo(0,-14); ctx.lineTo(-10,-20);
+  ctx.closePath(); ctx.fill();
+
+  // Hands (skin tone)
+  ctx.fillStyle='#d4a574';
+  ctx.beginPath(); ctx.roundRect(-30,10,8,8,3); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(22,10,8,8,3); ctx.fill();
+
+  // Briefcase in right hand
+  const bs=Math.sin(p.walkFrame*6)*4;
+  ctx.save();
+  ctx.translate(26,18+bs);
+  ctx.fillStyle='#5c3310';
+  ctx.beginPath(); ctx.roundRect(-7,-5,16,12,2); ctx.fill();
+  ctx.fillStyle='#8B6914';
+  ctx.fillRect(-3,-8,8,4);
+  ctx.fillStyle='#ffd700';
+  ctx.beginPath(); ctx.arc(1,-5,1.5,0,Math.PI*2); ctx.fill();
+  ctx.restore();
+
+  // HEAD - bigger, rounder (stocky guy)
+  ctx.fillStyle='#d4a574';
+  ctx.beginPath(); ctx.arc(0,-28,15,0,Math.PI*2); ctx.fill();
+  // Wider jaw / cheeks
+  ctx.beginPath();
+  ctx.moveTo(-14,-24); ctx.quadraticCurveTo(-16,-16,-10,-12);
+  ctx.lineTo(10,-12); ctx.quadraticCurveTo(16,-16,14,-24);
+  ctx.closePath(); ctx.fill();
+
+  // Hair - balding on top, short gray/dark on sides
+  ctx.fillStyle='#555';
+  // Left side hair
+  ctx.beginPath();
+  ctx.arc(-12,-32,7,Math.PI*.7,Math.PI*1.5); ctx.fill();
+  // Right side hair
+  ctx.beginPath();
+  ctx.arc(12,-32,7,Math.PI*1.5,Math.PI*2.3); ctx.fill();
+  // Very thin on top
+  ctx.fillStyle='#666';
+  ctx.beginPath();
+  ctx.ellipse(0,-42,5,2,0,0,Math.PI*2); ctx.fill();
+  // Shiny bald spot
+  ctx.fillStyle='rgba(255,230,200,.25)';
+  ctx.beginPath(); ctx.ellipse(0,-40,9,5,0,0,Math.PI*2); ctx.fill();
+
+  // BEARD - full, dark gray/brown
+  ctx.fillStyle='#4a4040';
+  ctx.beginPath();
+  ctx.moveTo(-12,-20);
+  ctx.quadraticCurveTo(-15,-10,-10,-4);
+  ctx.quadraticCurveTo(-6,4,0,5);
+  ctx.quadraticCurveTo(6,4,10,-4);
+  ctx.quadraticCurveTo(15,-10,12,-20);
+  ctx.closePath(); ctx.fill();
+  // Beard texture
+  ctx.fillStyle='#3a3535';
+  ctx.beginPath();
+  ctx.moveTo(-8,-16);
+  ctx.quadraticCurveTo(-10,-6,-6,0);
+  ctx.quadraticCurveTo(0,6,6,0);
+  ctx.quadraticCurveTo(10,-6,8,-16);
+  ctx.closePath(); ctx.fill();
+  // Mustache
+  ctx.fillStyle='#3a3535';
+  ctx.beginPath();
+  ctx.moveTo(-9,-18); ctx.quadraticCurveTo(-5,-14,0,-16);
+  ctx.quadraticCurveTo(5,-14,9,-18);
+  ctx.quadraticCurveTo(5,-16,0,-17);
+  ctx.quadraticCurveTo(-5,-16,-9,-18);
+  ctx.fill();
+
+  // Eyes - expressive
+  ctx.fillStyle='#fff';
+  ctx.beginPath(); ctx.ellipse(-6,-28,3.5,3,0,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(6,-28,3.5,3,0,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#3a2a1a';
+  ctx.beginPath(); ctx.arc(-5,-28,2,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.arc(7,-28,2,0,Math.PI*2); ctx.fill();
+  // Eyebrows
+  ctx.strokeStyle='#4a3a2a'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(-10,-33); ctx.quadraticCurveTo(-6,-35,-2,-33); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(3,-33); ctx.quadraticCurveTo(7,-35,11,-33); ctx.stroke();
+
+  // Nose
+  ctx.fillStyle='#c49060';
+  ctx.beginPath(); ctx.ellipse(0,-22,3,2.5,0,0,Math.PI*2); ctx.fill();
+
+  // Smile (big, friendly - he's a salesman!)
+  if(p.attacking) {
+    // BIG selling grin
+    ctx.fillStyle='#000';
+    ctx.beginPath(); ctx.arc(0,-16,7,0,Math.PI); ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.fillRect(-5,-16,10,3);
+    // Excitement lines
+    ctx.strokeStyle='#ffd700'; ctx.lineWidth=2;
+    for(let i=0;i<5;i++) {
+      const a = -Math.PI/2 + (i-2)*0.5;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a)*22, -28+Math.sin(a)*22);
+      ctx.lineTo(Math.cos(a)*28, -28+Math.sin(a)*28);
+      ctx.stroke();
+    }
+  } else {
+    // Normal confident smile
+    ctx.strokeStyle='#fff'; ctx.lineWidth=1.5;
+    ctx.beginPath(); ctx.arc(0,-14,5,.1,Math.PI-.1); ctx.stroke();
+  }
+
+  // Attack - papers/contracts flying
+  if(p.attacking) {
+    for(let i=0;i<4;i++) {
+      const angle = p.attackTimer*12+i*1.6;
+      const dist = 15+p.attackTimer*60;
+      ctx.save();
+      ctx.translate(Math.cos(angle)*dist, Math.sin(angle)*dist-15);
+      ctx.rotate(angle*2);
+      ctx.fillStyle='#fff';
+      ctx.fillRect(-5,-3,10,7);
+      ctx.fillStyle='#ccc';
+      ctx.fillRect(-3,-1,6,1);
+      ctx.fillRect(-3,1,4,1);
+      ctx.restore();
+    }
+  }
+
+  ctx.restore();
+}
+
+function drawPerson(p) {
+  const bounce=Math.sin(p.walkFrame*8)*2;
+  ctx.save();
+  ctx.translate(p.x, p.y+bounce);
+  if(p.dir<0) ctx.scale(-1,1);
+
+  // Shadow
+  ctx.fillStyle='rgba(0,0,0,.2)';
+  ctx.beginPath(); ctx.ellipse(0,p.h/2,p.w/2,5,0,0,Math.PI*2); ctx.fill();
+
+  // Legs
+  const ls=Math.sin(p.walkFrame*10)*5;
+  ctx.fillStyle=p.name==='empresário'?'#1a1a1a':'#555';
+  ctx.fillRect(-6,p.h/2-4,6,12+ls*.4);
+  ctx.fillRect(1,p.h/2-4,6,12-ls*.4);
+  ctx.fillStyle='#333';
+  ctx.fillRect(-7,p.h/2+7+ls*.3,8,4);
+  ctx.fillRect(0,p.h/2+7-ls*.3,8,4);
+
+  // Body
+  ctx.fillStyle=p.color;
+  ctx.beginPath(); ctx.roundRect(-p.w/2+2,-6,p.w-4,p.h/2+6,4); ctx.fill();
+
+  // Arms
+  ctx.fillRect(-p.w/2-2,-4,6,p.h/3);
+  ctx.fillRect(p.w/2-4,-4,6,p.h/3);
+
+  // Head
+  const skinTones = ['#e8c89e','#d4a574','#c49060','#f0d0a0','#dbb896'];
+  ctx.fillStyle = skinTones[p.name.length%skinTones.length];
+  ctx.beginPath(); ctx.arc(0,-14,11,0,Math.PI*2); ctx.fill();
+
+  // Hair
+  ctx.fillStyle=p.hair;
+  if(p.hairStyle==='bun') {
+    ctx.beginPath(); ctx.arc(0,-20,9,Math.PI,0); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,-26,5,0,Math.PI*2); ctx.fill();
+  } else if(p.hairStyle==='long') {
+    ctx.beginPath(); ctx.arc(0,-18,10,Math.PI*.8,Math.PI*2.2); ctx.fill();
+    ctx.fillRect(-10,-14,4,14);
+    ctx.fillRect(6,-14,4,14);
+  } else if(p.hairStyle==='band') {
+    ctx.fillStyle='#ff0000';
+    ctx.fillRect(-10,-20,20,4);
+  } else if(p.hairStyle!=='bald') {
+    ctx.beginPath(); ctx.arc(0,-18,9,Math.PI,0); ctx.fill();
+  }
+
+  // Face
+  if(p.fleeing) {
+    // Scared
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.arc(-4,-15,3.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(4,-15,3.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#000';
+    ctx.beginPath(); ctx.arc(-4,-15,2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(4,-15,2,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(0,-7,4,0,Math.PI*2); ctx.fill();
+    // Sweat drop
+    ctx.fillStyle='#87ceeb';
+    ctx.beginPath(); ctx.moveTo(12,-18); ctx.quadraticCurveTo(14,-14,12,-12);
+    ctx.quadraticCurveTo(10,-14,12,-18); ctx.fill();
+  } else {
+    ctx.fillStyle='#000';
+    ctx.beginPath(); ctx.arc(-4,-15,1.5,0,Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(4,-15,1.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#c0392b';
+    ctx.beginPath(); ctx.arc(0,-8,2.5,0,Math.PI); ctx.fill();
+  }
+
+  // Speech bubble
+  if(p.speechTimer > 0) {
+    ctx.fillStyle='rgba(255,255,255,.9)';
+    const bw = ctx.measureText(p.speech).width+12;
+    ctx.beginPath(); ctx.roundRect(-bw/2,-38,bw,16,6); ctx.fill();
+    ctx.fillStyle='#000'; ctx.font='11px Fredoka, sans-serif'; ctx.textAlign='center';
+    ctx.fillText(p.speech, 0, -26);
+  }
+
+  ctx.restore();
+}
+
+const FLEE_SPEECHES = ['SOCORRO!','NÃO QUERO!','FOGE!','ME DEIXA!','JÁ TENHO!','HELP!','NÃAAO!','CORRE!','ELE VEM!','CONSÓRCIO NÃO!'];
+
+function drawGround() {
+  // Street
+  ctx.fillStyle='#444';
+  ctx.fillRect(0,0,W,H);
+  // Grid pattern
+  ctx.strokeStyle='rgba(255,255,255,.04)'; ctx.lineWidth=1;
+  for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  // Sidewalk area
+  ctx.fillStyle='#555';
+  ctx.fillRect(W/2-130,H-95,260,95);
+  ctx.fillStyle='#4a4a4a';
+  ctx.fillRect(W/2-130,H-95,260,3);
+}
+
+function startGame() {
+  document.getElementById('startScreen').style.display='none';
+  document.getElementById('gameOver').style.display='none';
+  player=createPlayer();
+  people=[]; particles=[]; score=0; timer=60;
+  gameRunning=true; spawnTimer=0; lastTime=performance.now();
+  requestAnimationFrame(loop);
+}
+
+function endGame() {
+  gameRunning=false;
+  document.getElementById('gameOver').style.display='flex';
+  document.getElementById('finalScore').textContent=score+' VENDAS';
+  const msgs=[[0,'André foi demitido... 😢'],[5,'Dia fraco na ANDRÉMICON 😐'],[15,'Vendedor mediano 🤷'],[30,'André tá ON FIRE! 🔥'],[50,'MESTRE DO CONSÓRCIO! 👑'],[80,'LENDA DA ANDRÉMICON! 🏆']];
+  let msg=msgs[0][1];
+  for(const[t,m] of msgs) if(score>=t) msg=m;
+  document.getElementById('finalMsg').textContent=msg;
+}
+
+function loop(now) {
+  if(!gameRunning) return;
+  const dt=Math.min((now-lastTime)/1000,0.05);
+  lastTime=now;
+
+  timer-=dt;
+  if(timer<=0){endGame();return;}
+
+  // Spawn
+  spawnTimer-=dt;
+  if(spawnTimer<=0){
+    people.push(spawnPerson());
+    spawnTimer=.8+Math.random()*1.2;
+    if(timer<30) spawnTimer*=.7; // more people later
+  }
+
+  // Input
+  let dx=0,dy=0;
+  if(keys['ArrowLeft']||keys['KeyA'])dx=-1;
+  if(keys['ArrowRight']||keys['KeyD'])dx=1;
+  if(keys['ArrowUp']||keys['KeyW'])dy=-1;
+  if(keys['ArrowDown']||keys['KeyS'])dy=1;
+  if(touchX!==null&&!touchAttack){
+    const tdx=touchX-player.x,tdy=touchY-player.y,dist=Math.sqrt(tdx*tdx+tdy*tdy);
+    if(dist>15){dx=tdx/dist;dy=tdy/dist;}
+  }
+  if(touchAttack&&!player.attacking){player.attacking=true;player.attackTimer=0;touchAttack=false;}
+
+  if(dx||dy){
+    const len=Math.sqrt(dx*dx+dy*dy);
+    player.vx=(dx/len)*player.speed; player.vy=(dy/len)*player.speed;
+    if(dx) player.dir=dx>0?1:-1;
+    player.walkFrame+=dt*player.speed/30;
+  } else { player.vx*=.8; player.vy*=.8; }
+
+  player.x+=player.vx*dt; player.y+=player.vy*dt;
+  player.x=Math.max(30,Math.min(W-30,player.x));
+  player.y=Math.max(50,Math.min(H-30,player.y));
+
+  if((keys['Space']||keys['KeyE'])&&!player.attacking){player.attacking=true;player.attackTimer=0;}
+  if(player.attacking){player.attackTimer+=dt;if(player.attackTimer>.4)player.attacking=false;}
+
+  // People
+  for(let i=people.length-1;i>=0;i--){
+    const p=people[i];
+    if(p.caught){people.splice(i,1);continue;}
+    const pdx=player.x-p.x,pdy=player.y-p.y,pDist=Math.sqrt(pdx*pdx+pdy*pdy);
+
+    if(pDist<140&&!p.fleeing){
+      p.fleeing=true;
+      p.speech=FLEE_SPEECHES[Math.random()*FLEE_SPEECHES.length|0];
+      p.speechTimer=1.5;
+      const a=Math.atan2(-pdy,-pdx)+(Math.random()-.5)*.6;
+      p.fleeX=Math.cos(a); p.fleeY=Math.sin(a);
+    }
+
+    if(p.fleeing){
+      if(pDist<200){p.fleeX=-pdx/pDist;p.fleeY=-pdy/pDist;}
+      p.x+=p.fleeX*p.speed*1.6*dt;
+      p.y+=p.fleeY*p.speed*1.6*dt;
+      p.dir=p.fleeX>0?1:-1;
+      p.speechTimer-=dt;
+    } else if(!p.arrived){
+      const tdx=p.targetX-p.x,tdy=p.targetY-p.y,tDist=Math.sqrt(tdx*tdx+tdy*tdy);
+      if(tDist>5){p.x+=(tdx/tDist)*p.speed*dt;p.y+=(tdy/tDist)*p.speed*dt;p.dir=tdx>0?1:-1;}
+      else p.arrived=true;
+    } else {
+      if(Math.random()<.008){
+        p.targetX=Math.max(50,Math.min(W-50,p.x+(Math.random()-.5)*200));
+        p.targetY=Math.max(80,Math.min(H-140,p.y+(Math.random()-.5)*150));
+        p.arrived=false;
+      }
+    }
+
+    p.walkFrame+=dt*(p.fleeing?2:1);
+
+    if(player.attacking&&pDist<55){
+      p.caught=true;
+      score+=p.points;
+      addParticles(p.x,p.y,'#ffd700',MSGS_CATCH[Math.random()*MSGS_CATCH.length|0]);
+    }
+
+    if(p.x<-80||p.x>W+80||p.y<-80||p.y>H+80){
+      if(p.fleeing) addParticles(Math.max(20,Math.min(W-20,p.x)),Math.max(20,Math.min(H-20,p.y)),'#ff4444',MSGS_FLEE[Math.random()*MSGS_FLEE.length|0]);
+      people.splice(i,1);
+    }
+  }
+
+  // Particles
+  for(let i=particles.length-1;i>=0;i--){
+    const p=particles[i];
+    p.x+=p.vx*dt; p.y+=p.vy*dt;
+    if(!p.text) p.vy+=250*dt;
+    p.life-=dt;
+    if(p.life<=0) particles.splice(i,1);
+  }
+
+  // DRAW
+  ctx.clearRect(0,0,W,H);
+  drawGround();
+  drawStore();
+
+  const drawables=[...people.map(p=>({...p,isPlayer:false})),{isPlayer:true,y:player.y}];
+  drawables.sort((a,b)=>a.y-b.y);
+  for(const d of drawables){
+    if(d.isPlayer) drawAndre(player);
+    else drawPerson(d);
+  }
+
+  // Particles
+  for(const p of particles){
+    ctx.globalAlpha=Math.min(1,p.life);
+    if(p.text){
+      ctx.font=`bold ${p.size}px Bangers, cursive`;
+      ctx.textAlign='center';
+      ctx.fillStyle='#000'; ctx.fillText(p.text,p.x+2,p.y+2);
+      ctx.fillStyle=p.color; ctx.fillText(p.text,p.x,p.y);
+    } else {
+      ctx.fillStyle=p.color;
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.size,0,Math.PI*2); ctx.fill();
+    }
+    ctx.globalAlpha=1;
+  }
+
+  // UI
+  document.getElementById('score').textContent='VENDAS: '+score;
+  document.getElementById('timer').textContent='⏱ '+Math.ceil(timer)+'s';
+
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
